@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>英単語クイズ</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --primary: #4F46E5;
+    --primary-light: #818CF8;
+    --success: #10B981;
+    --danger: #EF4444;
+    --bg: #F0F4FF;
+    --card: #FFFFFF;
+    --text: #1E293B;
+    --text-light: #64748B;
+    --border: #E2E8F0;
+  }
+
+  body {
+    font-family: 'Segoe UI', 'Hiragino Sans', 'Meiryo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  .container {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+
+  header {
+    text-align: center;
+    padding: 20px 0 10px;
+  }
+
+  header h1 {
+    font-size: 1.6rem;
+    color: var(--primary);
+  }
+
+  header p {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    margin-top: 4px;
+  }
+
+  /* Tab Navigation */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--card);
+    border-radius: 12px;
+    padding: 4px;
+    margin: 16px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-light);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tab-btn.active {
+    background: var(--primary);
+    color: white;
+  }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Card */
+  .card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 16px;
+  }
+
+  /* Quiz */
+  .quiz-word {
+    text-align: center;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary);
+    padding: 20px 0;
+    letter-spacing: 1px;
+  }
+
+  .quiz-hint {
+    text-align: center;
+    color: var(--text-light);
+    font-size: 0.85rem;
+    margin-bottom: 20px;
+  }
+
+  .quiz-progress {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    font-size: 0.9rem;
+    color: var(--text-light);
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--primary-light));
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+
+  .choices {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .choice-btn {
+    width: 100%;
+    padding: 14px 18px;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    background: white;
+    font-size: 1rem;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text);
+  }
+
+  .choice-btn:hover:not(:disabled) {
+    border-color: var(--primary-light);
+    background: #F5F3FF;
+  }
+
+  .choice-btn.correct {
+    border-color: var(--success);
+    background: #ECFDF5;
+    color: var(--success);
+    font-weight: 600;
+  }
+
+  .choice-btn.wrong {
+    border-color: var(--danger);
+    background: #FEF2F2;
+    color: var(--danger);
+  }
+
+  .choice-btn:disabled {
+    cursor: default;
+    opacity: 0.7;
+  }
+
+  .feedback {
+    text-align: center;
+    padding: 16px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 12px;
+    margin-top: 16px;
+    display: none;
+  }
+
+  .feedback.show { display: block; }
+  .feedback.correct-fb { background: #ECFDF5; color: var(--success); }
+  .feedback.wrong-fb { background: #FEF2F2; color: var(--danger); }
+
+  .next-btn {
+    width: 100%;
+    padding: 14px;
+    margin-top: 16px;
+    border: none;
+    border-radius: 12px;
+    background: var(--primary);
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: none;
+    transition: background 0.2s;
+  }
+
+  .next-btn:hover { background: #4338CA; }
+  .next-btn.show { display: block; }
+
+  /* Results */
+  .results {
+    text-align: center;
+    padding: 20px 0;
+  }
+
+  .results-score {
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--primary);
+  }
+
+  .results-detail {
+    color: var(--text-light);
+    margin: 8px 0 20px;
+    font-size: 1rem;
+  }
+
+  .results-message {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+  }
+
+  .results-list {
+    text-align: left;
+    margin: 16px 0;
+  }
+
+  .results-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.95rem;
+  }
+
+  .results-list-item .word { font-weight: 600; }
+  .results-list-item .mark { font-size: 1.2rem; }
+
+  /* Quiz Setup */
+  .setup-section { margin-bottom: 20px; }
+  .setup-section label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+  }
+
+  .setup-section select,
+  .setup-section input[type="number"] {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-size: 1rem;
+    background: white;
+    color: var(--text);
+  }
+
+  .direction-toggle {
+    display: flex;
+    gap: 8px;
+  }
+
+  .direction-btn {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: white;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    color: var(--text);
+  }
+
+  .direction-btn.active {
+    border-color: var(--primary);
+    background: #F5F3FF;
+    color: var(--primary);
+    font-weight: 600;
+  }
+
+  .start-btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: transform 0.1s;
+  }
+
+  .start-btn:hover { transform: scale(1.02); }
+  .start-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* Word List */
+  .word-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .word-list-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .word-count-badge {
+    background: var(--primary);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .add-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 16px;
+    background: #F8FAFC;
+    border-radius: 12px;
+  }
+
+  .add-form input {
+    padding: 10px 14px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-size: 1rem;
+  }
+
+  .add-form input:focus {
+    outline: none;
+    border-color: var(--primary-light);
+  }
+
+  .add-btn {
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    background: var(--primary);
+    color: white;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .add-btn:hover { background: #4338CA; }
+
+  .word-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    gap: 10px;
+  }
+
+  .word-item:last-child { border-bottom: none; }
+
+  .word-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .word-en {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--primary);
+  }
+
+  .word-ja {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-top: 2px;
+  }
+
+  .word-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .icon-btn {
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    transition: all 0.2s;
+  }
+
+  .edit-btn { background: #EEF2FF; color: var(--primary); }
+  .edit-btn:hover { background: #E0E7FF; }
+  .delete-btn { background: #FEF2F2; color: var(--danger); }
+  .delete-btn:hover { background: #FEE2E2; }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-light);
+  }
+
+  .empty-state .icon { font-size: 2.5rem; margin-bottom: 12px; }
+
+  /* Range selector */
+  .range-section {
+    margin-bottom: 16px;
+  }
+
+  .range-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .range-row input {
+    width: 80px;
+    padding: 8px 12px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-size: 1rem;
+    text-align: center;
+  }
+
+  .range-row span {
+    color: var(--text-light);
+    font-weight: 600;
+  }
+
+  /* Bulk add */
+  .bulk-toggle {
+    font-size: 0.85rem;
+    color: var(--primary);
+    cursor: pointer;
+    text-decoration: underline;
+    background: none;
+    border: none;
+    margin-bottom: 10px;
+  }
+
+  .bulk-area {
+    display: none;
+    margin-bottom: 16px;
+  }
+
+  .bulk-area.show { display: block; }
+
+  .bulk-area textarea {
+    width: 100%;
+    height: 120px;
+    padding: 12px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    resize: vertical;
+  }
+
+  .bulk-area .hint {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    margin: 6px 0 10px;
+  }
+
+  /* Edit modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .modal-overlay.show {
+    display: flex;
+  }
+
+  .modal {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .modal h3 {
+    margin-bottom: 16px;
+    font-size: 1.1rem;
+  }
+
+  .modal input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-size: 1rem;
+    margin-bottom: 10px;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .modal-actions button {
+    flex: 1;
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .cancel-modal-btn {
+    border: 2px solid var(--border);
+    background: white;
+    color: var(--text);
+  }
+
+  .save-modal-btn {
+    border: none;
+    background: var(--primary);
+    color: white;
+  }
+
+  /* Export/Import */
+  .data-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .data-btn {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: white;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text);
+    transition: all 0.2s;
+  }
+
+  .data-btn:hover { border-color: var(--primary-light); }
+
+  /* Notification */
+  .notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    z-index: 200;
+    transition: transform 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+
+  .notification.show { transform: translateX(-50%) translateY(0); }
+  .notification.success { background: var(--success); color: white; }
+  .notification.error { background: var(--danger); color: white; }
+
+  @media (max-width: 400px) {
+    .quiz-word { font-size: 1.6rem; }
+    .card { padding: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>英単語クイズ</h1>
+    <p>がんばって覚えよう！</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('quiz')">クイズ</button>
+    <button class="tab-btn" onclick="switchTab('words')">単語リスト</button>
+  </div>
+
+  <!-- Quiz Tab -->
+  <div id="tab-quiz" class="tab-content active">
+    <!-- Setup -->
+    <div id="quiz-setup" class="card">
+      <div class="setup-section">
+        <label>出題の向き</label>
+        <div class="direction-toggle">
+          <button class="direction-btn active" onclick="setDirection('en-ja', this)">英語 → 日本語</button>
+          <button class="direction-btn" onclick="setDirection('ja-en', this)">日本語 → 英語</button>
+        </div>
+      </div>
+      <div class="setup-section range-section">
+        <label>出題範囲（番号で指定）</label>
+        <div class="range-row">
+          <input type="number" id="range-from" min="1" value="1" placeholder="最初">
+          <span>〜</span>
+          <input type="number" id="range-to" min="1" value="200" placeholder="最後">
+          <span>番</span>
+        </div>
+      </div>
+      <div class="setup-section">
+        <label>出題数</label>
+        <input type="number" id="quiz-count" min="1" max="200" value="20">
+      </div>
+      <button class="start-btn" id="start-btn" onclick="startQuiz()">クイズをはじめる</button>
+    </div>
+
+    <!-- Quiz Area -->
+    <div id="quiz-area" style="display:none;">
+      <div class="card">
+        <div class="quiz-progress">
+          <span id="q-num">1 / 10</span>
+          <span id="q-score">正解: 0</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+        </div>
+        <div class="quiz-hint" id="quiz-direction-label">英語の意味を選ぼう</div>
+        <div class="quiz-word" id="quiz-word">apple</div>
+        <div class="choices" id="choices"></div>
+        <div class="feedback" id="feedback"></div>
+        <button class="next-btn" id="next-btn" onclick="nextQuestion()">次の問題へ</button>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="quiz-results" style="display:none;">
+      <div class="card results">
+        <div class="results-score" id="results-score">80%</div>
+        <div class="results-detail" id="results-detail">8 / 10 問正解</div>
+        <div class="results-message" id="results-message">よくできました！</div>
+        <div class="results-list" id="results-list"></div>
+        <button class="start-btn" onclick="showSetup()">もう一回やる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Words Tab -->
+  <div id="tab-words" class="tab-content">
+    <div class="card">
+      <div class="word-list-header">
+        <h2>単語リスト</h2>
+        <span class="word-count-badge" id="word-count">0語</span>
+      </div>
+
+      <!-- Add single -->
+      <div class="add-form">
+        <input type="text" id="input-en" placeholder="英単語 (例: apple)">
+        <input type="text" id="input-ja" placeholder="日本語の意味 (例: りんご)">
+        <button class="add-btn" onclick="addWord()">追加する</button>
+      </div>
+
+      <!-- Bulk add toggle -->
+      <button class="bulk-toggle" onclick="toggleBulk()">まとめて追加する</button>
+      <div class="bulk-area" id="bulk-area">
+        <textarea id="bulk-input" placeholder="1行に1つずつ書いてね&#10;apple, りんご&#10;book, 本&#10;school, 学校"></textarea>
+        <div class="hint">※「英単語, 日本語」の形で1行1語ずつ入力</div>
+        <button class="add-btn" onclick="bulkAdd()">まとめて追加</button>
+      </div>
+
+      <!-- Word list -->
+      <div id="word-list"></div>
+
+      <!-- Data actions -->
+      <div class="data-actions">
+        <button class="data-btn" onclick="exportData()">データ保存</button>
+        <button class="data-btn" onclick="document.getElementById('import-file').click()">データ読込</button>
+        <button class="data-btn" onclick="clearAllWords()">全削除</button>
+        <input type="file" id="import-file" accept=".json,.csv" style="display:none" onchange="importData(event)">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <h3>単語を編集</h3>
+    <input type="text" id="edit-en" placeholder="英単語">
+    <input type="text" id="edit-ja" placeholder="日本語の意味">
+    <div class="modal-actions">
+      <button class="cancel-modal-btn" onclick="closeModal()">キャンセル</button>
+      <button class="save-modal-btn" onclick="saveEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Notification -->
+<div class="notification" id="notification"></div>
+
+<script>
+// ─── State ───
+let words = [];
+let quizDirection = 'en-ja';
+let currentQuiz = [];
+let currentIndex = 0;
+let score = 0;
+let answered = false;
+let editingIndex = -1;
+let quizResults = [];
+
+const STORAGE_KEY = 'vocabQuizWords';
+
+// ─── Init ───
+function init() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    try { words = JSON.parse(saved); } catch(e) { words = []; }
+  }
+  if (words.length === 0) {
+    words = [
+      { en: 'battle', ja: '戦い・戦闘' },
+      { en: 'bomb', ja: '爆弾・～を爆撃する' },
+      { en: 'conflict', ja: '衝突・争い・紛争' },
+      { en: 'crisis', ja: '危機' },
+      { en: 'immigrate', ja: '移住する' },
+      { en: 'inevitable', ja: '避けられない・必然的な' },
+      { en: 'justice', ja: '正義・公正' },
+      { en: 'resist', ja: '～に抵抗する' },
+      { en: 'threat', ja: '脅威・脅し' },
+      { en: 'weapon', ja: '武器・兵器' },
+      { en: 'motivation', ja: '意欲・やる気・動機づけ' },
+      { en: 'emotion', ja: '感情' },
+      { en: 'objective', ja: '客観的な・目的' },
+      { en: 'abnormal', ja: '異常な・ふつうでない' },
+      { en: 'depression', ja: '憂うつ・うつ病・不況' },
+      { en: 'pale', ja: '青白い・淡い' },
+      { en: 'stress', ja: 'ストレス・圧力・強調する' },
+      { en: 'locate', ja: '突き止める・探し出す' },
+      { en: 'scan', ja: '細かく調べる・ざっと見る' },
+      { en: 'aware', ja: '気づいて' },
+      { en: 'appeal', ja: '訴え・魅力・訴える' },
+      { en: 'recommend', ja: '勧める' },
+      { en: 'acknowledge', ja: '認める・感謝する' },
+      { en: 'approve', ja: '賛成する・承認する' },
+      { en: 'critical', ja: '批判的な・重大な・危機的な' },
+      { en: 'negotiation', ja: '交渉' },
+      { en: 'blend', ja: '混ぜ合わせる・混合物' },
+      { en: 'combine', ja: '結合させる' },
+      { en: 'attach', ja: '添付する・取り付ける' },
+      { en: 'derive', ja: '由来する・派生する' },
+      { en: 'industry', ja: '産業・工業' },
+      { en: 'agriculture', ja: '農業' },
+      { en: 'crop', ja: '作物・収穫' },
+      { en: 'cultivate', ja: '耕す・栽培する' },
+      { en: 'equipment', ja: '機器・設備' },
+      { en: 'fluent', ja: '堪能で・流ちょうな' },
+      { en: 'phrase', ja: '言い回し・句・フレーズ' },
+      { en: 'term', ja: '用語・期間・学期' },
+      { en: 'tongue', ja: '語・ことばづかい・舌' },
+      { en: 'translate', ja: '翻訳する' },
+      { en: 'experiment', ja: '実験・実験する' },
+      { en: 'gene', ja: '遺伝子' },
+      { en: 'mineral', ja: '鉱物' },
+      { en: 'phenomenon', ja: '現象' },
+      { en: 'precious', ja: '貴重な・大切な' },
+      { en: 'steam', ja: '蒸気・湯気を立てる' },
+      { en: 'universe', ja: '宇宙' },
+      { en: 'ecosystem', ja: '生態系' },
+      { en: 'habitat', ja: '生息地・生育地' },
+      { en: 'breed', ja: '繁殖させる・飼育する・子を産む' },
+      { en: 'fascinate', ja: '魅了する' },
+      { en: 'compose', ja: 'つくる・作曲する・構成する' },
+      { en: 'literature', ja: '文学・文芸' },
+      { en: 'myth', ja: '神話' },
+      { en: 'narrate', ja: '語る・述べる' },
+      { en: 'preserve', ja: '守る・保存する・維持する' },
+      { en: 'restore', ja: '修復する・もどす' },
+      { en: 'spirit', ja: '精神・心・魂' },
+      { en: 'tale', ja: 'お話・物語' },
+      { en: 'tragedy', ja: '悲劇' },
+      { en: 'praise', ja: 'ほめる・称賛する' },
+      { en: 'deserve', ja: '値する・の価値がある' },
+      { en: 'efficient', ja: '効率的な・有能な' },
+      { en: 'reputation', ja: '評判' },
+      { en: 'superior', ja: '優れた・上位の' },
+      { en: 'valuable', ja: '高価な・貴重な' },
+      { en: 'worth', ja: '価値がある・価値' },
+      { en: 'accuse', ja: '非難する・告訴する' },
+      { en: 'stupid', ja: 'ばかな・ばかげた' },
+      { en: 'vain', ja: 'むだな・うぬぼれた' },
+      { en: 'govern', ja: '統治する・支配する' },
+      { en: 'democracy', ja: '民主主義・民主政治' },
+      { en: 'army', ja: '軍隊・陸軍' },
+      { en: 'mayor', ja: '市長・町長' },
+      { en: 'policy', ja: '政策・方針' },
+      { en: 'politics', ja: '政治・政治学' },
+      { en: 'president', ja: '大統領・社長・会長' },
+      { en: 'security', ja: '警備・安全・安心感' },
+      { en: 'settle', ja: '解決する・住み着く・定住する' },
+      { en: 'urge', ja: '促す・強く勧める・衝動' },
+      { en: 'barely', ja: 'かろうじて・やっと' },
+      { en: 'deprive', ja: '～から（…を）奪う' },
+      { en: 'gap', ja: '隔たり・すき間・相違' },
+      { en: 'obstacle', ja: '障害（物）' },
+      { en: 'breath', ja: '呼吸・息' },
+      { en: 'gesture', ja: 'しぐさ・身ぶり' },
+      { en: 'nod', ja: 'うなずき・会釈・うなずく' },
+      { en: 'seize', ja: '～をつかむ・とらえる' },
+      { en: 'stretch', ja: '～を伸ばす・引っ張る' },
+      { en: 'yell', ja: 'どなる・わめく・叫び声' },
+      { en: 'arrest', ja: '～を逮捕する・逮捕' },
+      { en: 'commit', ja: '～を犯す・～を委託する' },
+      { en: 'guilty', ja: '有罪の・罪の意識のある' },
+      { en: 'incident', ja: '事件・出来事' },
+      { en: 'innocent', ja: '罪のない・無罪の・無邪気な' },
+      { en: 'jail', ja: '留置所・～を投獄する' },
+      { en: 'prison', ja: '刑務所・牢獄' },
+      { en: 'proof', ja: '証拠' },
+      { en: 'suicide', ja: '自殺' },
+      { en: 'witness', ja: '目撃者・証人・～を目撃する' },
+      { en: 'abundant', ja: '豊富な' },
+      { en: 'amount', ja: '量・額' },
+      { en: 'calculate', ja: '計算する' },
+      { en: 'equal', ja: '等しい・平等の・匹敵する' },
+      { en: 'excess', ja: '過剰・超過' },
+      { en: 'numerous', ja: '多数の・たくさんの' },
+      { en: 'proportion', ja: '割合・つり合い・バランス' },
+      { en: 'quantity', ja: '数量・分量' },
+      { en: 'total', ja: '全体の・合計の・合計' },
+      { en: 'volume', ja: '量・体積・1巻' },
+      { en: 'destination', ja: '目的地・行き先' },
+      { en: 'depart', ja: '出発する' },
+      { en: 'port', ja: '港・港町' },
+      { en: 'guide', ja: 'ガイド・案内人・～を案内する' },
+      { en: 'heaven', ja: '天国・空' },
+      { en: 'hunt', ja: '狩り・～を狩る' },
+      { en: 'voyage', ja: '旅行・航海' },
+      { en: 'reserve', ja: '～を予約する・たくわえ' },
+      { en: 'rest', ja: '休む・休息・安らぎ' },
+      { en: 'cancel', ja: '～を取り消す・中止する' },
+      { en: 'decrease', ja: '減少する・～を減らす' },
+      { en: 'expand', ja: '～を拡大する・広げる' },
+      { en: 'extend', ja: '～を延長する・伸ばす・広げる' },
+      { en: 'restrict', ja: '～を制限する・限定する' },
+      { en: 'rise', ja: '増加する・上がる・上昇する' },
+      { en: 'aside', ja: 'わきへ・わきに' },
+      { en: 'edge', ja: '端・ふち・刃' },
+      { en: 'internal', ja: '内部の・国内の' },
+      { en: 'nearby', ja: '近くの・近くに' },
+      { en: 'surface', ja: '表面・浮上する' },
+      { en: 'general', ja: '一般の・全体の・将軍' },
+      { en: 'abstract', ja: '抽象的な' },
+      { en: 'complex', ja: '複雑な・複合体' },
+      { en: 'mild', ja: 'おだやかな・温和な・軽い' },
+      { en: 'plain', ja: 'わかりやすい・質素な・平原' },
+      { en: 'sharp', ja: 'とがった・鋭い・急激な' },
+      { en: 'sort', ja: '種類・～を分類する' },
+      { en: 'standard', ja: '基準・標準・標準的な' },
+      { en: 'ordinary', ja: '平凡な・ふつうの' },
+      { en: 'extent', ja: '程度・範囲' },
+      { en: 'extraordinary', ja: '並外れた・異常な' },
+      { en: 'extreme', ja: '極端な・極度の' },
+      { en: 'highly', ja: '非常に・大いに' },
+      { en: 'huge', ja: 'ばく大な・非常に大きな' },
+      { en: 'incredible', ja: '信じられない・途方もない' },
+      { en: 'intense', ja: '強烈な・激しい' },
+      { en: 'severe', ja: '深刻な・ひどい・厳しい' },
+      { en: 'initial', ja: '最初の・第一の・頭文字' },
+      { en: 'sequence', ja: '順番・順序・連続' },
+      { en: 'series', ja: 'ひと続き・連続・シリーズ' },
+      { en: 'absent', ja: '欠席して・不在である' },
+      { en: 'aloud', ja: '声を出して' },
+      { en: 'attend', ja: '～に出席する・通う' },
+      { en: 'educate', ja: '～を教育する' },
+      { en: 'facility', ja: '施設・設備' },
+      { en: 'institute', ja: '研究所・学校・協会' },
+      { en: 'scholarship', ja: '奨学金' },
+      { en: 'victory', ja: '勝利' },
+      { en: 'tournament', ja: 'トーナメント・勝ち抜き試合' },
+      { en: 'defeat', ja: '～を負かす・敗北' },
+      { en: 'bunch', ja: '房・束' },
+      { en: 'dozen', ja: 'ダース・12個' },
+      { en: 'per', ja: '～あたり・～につき' },
+      { en: 'pound', ja: 'ポンド' },
+      { en: 'sheet', ja: '1枚・シーツ' },
+      { en: 'current', ja: '現在の・流れ・電流' },
+      { en: 'former', ja: '以前の・前者の' },
+      { en: 'lately', ja: '最近・近頃' },
+      { en: 'previous', ja: '前の・先の' },
+      { en: 'recall', ja: '～を思い出す・記憶' },
+      { en: 'atmosphere', ja: '雰囲気・大気' },
+      { en: 'bound', ja: '行きの・向かう' },
+      { en: 'district', ja: '地区・地域' },
+      { en: 'exit', ja: '出口・退出' },
+      { en: 'foundation', ja: '基礎・土台・財団' },
+      { en: 'surround', ja: '～を囲む・包囲する' },
+      { en: 'benefit', ja: '利点・利益・恩恵' },
+      { en: 'miracle', ja: '奇跡' },
+      { en: 'overcome', ja: '克服する・打ち勝つ' },
+      { en: 'progress', ja: '進歩・進展・前進する' },
+      { en: 'bare', ja: 'むき出しの・はだかの' },
+      { en: 'beard', ja: 'あごひげ' },
+      { en: 'cell', ja: '細胞・独房・セル' },
+      { en: 'lung', ja: '肺' },
+      { en: 'muscle', ja: '筋肉' },
+      { en: 'organ', ja: '器官・臓器・オルガン' },
+      { en: 'oxygen', ja: '酸素' },
+      { en: 'skin', ja: '肌・皮膚' },
+      { en: 'soul', ja: '魂・精神・人' },
+      { en: 'vision', ja: '視力・想像力・先見の明' },
+      { en: 'ceremony', ja: '式・儀式' },
+      { en: 'formal', ja: '正式な・形式ばった' },
+      { en: 'occasion', ja: '機会・場・出来事' },
+      { en: 'participate', ja: '参加する' },
+      { en: 'present', ja: '出席している・現在の・プレゼント・贈る' },
+      { en: 'prize', ja: '賞・賞品' },
+      { en: 'commercial', ja: '商業的な・コマーシャル' },
+      { en: 'service', ja: 'サービス・貢献・奉仕' },
+      { en: 'construct', ja: '～を建設する・組み立てる' },
+      { en: 'transport', ja: '～を輸送する・輸送・交通機関' },
+    ];
+    saveWords();
+  }
+  renderWordList();
+  updateRangeMax();
+}
+
+function saveWords() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(words));
+  updateRangeMax();
+}
+
+function updateRangeMax() {
+  document.getElementById('range-to').value = Math.min(
+    parseInt(document.getElementById('range-to').value) || words.length,
+    words.length
+  );
+  document.getElementById('quiz-count').value = Math.min(
+    parseInt(document.getElementById('quiz-count').value) || 10,
+    words.length
+  );
+  document.getElementById('start-btn').disabled = words.length < 4;
+}
+
+// ─── Tabs ───
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', (tab === 'quiz' && i === 0) || (tab === 'words' && i === 1));
+  });
+  document.getElementById('tab-quiz').classList.toggle('active', tab === 'quiz');
+  document.getElementById('tab-words').classList.toggle('active', tab === 'words');
+  if (tab === 'quiz') updateRangeMax();
+}
+
+// ─── Quiz ───
+function setDirection(dir, btn) {
+  quizDirection = dir;
+  document.querySelectorAll('.direction-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function startQuiz() {
+  if (words.length < 4) {
+    notify('4語以上登録してね！', 'error');
+    return;
+  }
+
+  const from = Math.max(1, parseInt(document.getElementById('range-from').value) || 1);
+  const to = Math.min(words.length, parseInt(document.getElementById('range-to').value) || words.length);
+
+  if (from > to || from > words.length) {
+    notify('範囲を確認してね', 'error');
+    return;
+  }
+
+  const rangeWords = words.slice(from - 1, to);
+  if (rangeWords.length < 4) {
+    notify('範囲内に4語以上必要だよ', 'error');
+    return;
+  }
+
+  const count = Math.min(
+    parseInt(document.getElementById('quiz-count').value) || 10,
+    rangeWords.length
+  );
+
+  // Shuffle and pick
+  currentQuiz = shuffle([...rangeWords]).slice(0, count);
+  currentIndex = 0;
+  score = 0;
+  quizResults = [];
+
+  document.getElementById('quiz-setup').style.display = 'none';
+  document.getElementById('quiz-results').style.display = 'none';
+  document.getElementById('quiz-area').style.display = 'block';
+
+  showQuestion();
+}
+
+function showQuestion() {
+  answered = false;
+  const q = currentQuiz[currentIndex];
+  const total = currentQuiz.length;
+
+  document.getElementById('q-num').textContent = `${currentIndex + 1} / ${total}`;
+  document.getElementById('q-score').textContent = `正解: ${score}`;
+  document.getElementById('progress-fill').style.width = `${(currentIndex / total) * 100}%`;
+
+  let questionText, correctAnswer, getWrong;
+
+  if (quizDirection === 'en-ja') {
+    questionText = q.en;
+    correctAnswer = q.ja;
+    getWrong = (w) => w.ja;
+    document.getElementById('quiz-direction-label').textContent = '日本語の意味を選ぼう';
+  } else {
+    questionText = q.ja;
+    correctAnswer = q.en;
+    getWrong = (w) => w.en;
+    document.getElementById('quiz-direction-label').textContent = '英単語を選ぼう';
+  }
+
+  document.getElementById('quiz-word').textContent = questionText;
+
+  // Generate choices
+  const wrongPool = words.filter(w => w.en !== q.en);
+  const wrongChoices = shuffle(wrongPool).slice(0, 3).map(getWrong);
+  const allChoices = shuffle([correctAnswer, ...wrongChoices]);
+
+  const choicesEl = document.getElementById('choices');
+  choicesEl.innerHTML = '';
+  allChoices.forEach(choice => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = choice;
+    btn.onclick = () => checkAnswer(btn, choice, correctAnswer);
+    choicesEl.appendChild(btn);
+  });
+
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('feedback').style.display = 'none';
+  document.getElementById('next-btn').className = 'next-btn';
+}
+
+function checkAnswer(btn, selected, correct) {
+  if (answered) return;
+  answered = true;
+
+  const isCorrect = selected === correct;
+  const feedback = document.getElementById('feedback');
+
+  // Disable all buttons
+  document.querySelectorAll('.choice-btn').forEach(b => {
+    b.disabled = true;
+    if (b.textContent === correct) b.classList.add('correct');
+  });
+
+  if (isCorrect) {
+    btn.classList.add('correct');
+    feedback.textContent = 'すごい！正解！';
+    feedback.className = 'feedback correct-fb show';
+    score++;
+  } else {
+    btn.classList.add('wrong');
+    feedback.textContent = `おしい！正解は「${correct}」`;
+    feedback.className = 'feedback wrong-fb show';
+  }
+
+  quizResults.push({
+    word: currentQuiz[currentIndex],
+    correct: isCorrect
+  });
+
+  document.getElementById('q-score').textContent = `正解: ${score}`;
+
+  if (currentIndex < currentQuiz.length - 1) {
+    document.getElementById('next-btn').className = 'next-btn show';
+    document.getElementById('next-btn').textContent = '次の問題へ';
+  } else {
+    document.getElementById('next-btn').className = 'next-btn show';
+    document.getElementById('next-btn').textContent = '結果を見る';
+  }
+}
+
+function nextQuestion() {
+  currentIndex++;
+  if (currentIndex < currentQuiz.length) {
+    showQuestion();
+  } else {
+    showResults();
+  }
+}
+
+function showResults() {
+  document.getElementById('quiz-area').style.display = 'none';
+  document.getElementById('quiz-results').style.display = 'block';
+
+  const total = currentQuiz.length;
+  const pct = Math.round((score / total) * 100);
+
+  document.getElementById('results-score').textContent = `${pct}%`;
+  document.getElementById('results-detail').textContent = `${score} / ${total} 問正解`;
+
+  let msg;
+  if (pct === 100) msg = 'パーフェクト！最高！';
+  else if (pct >= 80) msg = 'よくできました！';
+  else if (pct >= 60) msg = 'いい感じ！もう少し！';
+  else if (pct >= 40) msg = 'がんばろう！';
+  else msg = 'もう一度チャレンジ！';
+  document.getElementById('results-message').textContent = msg;
+
+  const listEl = document.getElementById('results-list');
+  listEl.innerHTML = '';
+  quizResults.forEach(r => {
+    const item = document.createElement('div');
+    item.className = 'results-list-item';
+    item.innerHTML = `
+      <span class="word">${r.word.en} = ${r.word.ja}</span>
+      <span class="mark">${r.correct ? '⭕' : '❌'}</span>
+    `;
+    listEl.appendChild(item);
+  });
+}
+
+function showSetup() {
+  document.getElementById('quiz-area').style.display = 'none';
+  document.getElementById('quiz-results').style.display = 'none';
+  document.getElementById('quiz-setup').style.display = 'block';
+  updateRangeMax();
+}
+
+// ─── Word Management ───
+function renderWordList() {
+  const list = document.getElementById('word-list');
+  const countEl = document.getElementById('word-count');
+  countEl.textContent = `${words.length}語`;
+
+  if (words.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">📝</div>
+        <p>まだ単語がないよ<br>上のフォームから追加しよう！</p>
+      </div>
+    `;
+    return;
+  }
+
+  list.innerHTML = '';
+  words.forEach((w, i) => {
+    const item = document.createElement('div');
+    item.className = 'word-item';
+    item.innerHTML = `
+      <div style="color:var(--text-light);font-size:0.8rem;min-width:28px">${i + 1}</div>
+      <div class="word-info">
+        <div class="word-en">${escapeHtml(w.en)}</div>
+        <div class="word-ja">${escapeHtml(w.ja)}</div>
+      </div>
+      <div class="word-actions">
+        <button class="icon-btn edit-btn" onclick="openEdit(${i})" title="編集">✏️</button>
+        <button class="icon-btn delete-btn" onclick="deleteWord(${i})" title="削除">🗑</button>
+      </div>
+    `;
+    list.appendChild(item);
+  });
+}
+
+function addWord() {
+  const en = document.getElementById('input-en').value.trim();
+  const ja = document.getElementById('input-ja').value.trim();
+  if (!en || !ja) {
+    notify('英単語と日本語の意味を入力してね', 'error');
+    return;
+  }
+  words.push({ en, ja });
+  saveWords();
+  renderWordList();
+  document.getElementById('input-en').value = '';
+  document.getElementById('input-ja').value = '';
+  document.getElementById('input-en').focus();
+  notify('追加しました！', 'success');
+}
+
+function deleteWord(i) {
+  if (confirm(`「${words[i].en}」を削除する？`)) {
+    words.splice(i, 1);
+    saveWords();
+    renderWordList();
+    notify('削除しました', 'success');
+  }
+}
+
+function openEdit(i) {
+  editingIndex = i;
+  document.getElementById('edit-en').value = words[i].en;
+  document.getElementById('edit-ja').value = words[i].ja;
+  document.getElementById('edit-modal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('edit-modal').classList.remove('show');
+  editingIndex = -1;
+}
+
+function saveEdit() {
+  const en = document.getElementById('edit-en').value.trim();
+  const ja = document.getElementById('edit-ja').value.trim();
+  if (!en || !ja) {
+    notify('両方入力してね', 'error');
+    return;
+  }
+  words[editingIndex] = { en, ja };
+  saveWords();
+  renderWordList();
+  closeModal();
+  notify('更新しました！', 'success');
+}
+
+function toggleBulk() {
+  document.getElementById('bulk-area').classList.toggle('show');
+}
+
+function bulkAdd() {
+  const text = document.getElementById('bulk-input').value.trim();
+  if (!text) return;
+
+  const lines = text.split('\n').filter(l => l.trim());
+  let added = 0;
+  lines.forEach(line => {
+    // Support comma, tab, or multiple spaces as separator
+    const parts = line.split(/[,\t]+/).map(s => s.trim());
+    if (parts.length >= 2 && parts[0] && parts[1]) {
+      words.push({ en: parts[0], ja: parts[1] });
+      added++;
+    }
+  });
+
+  if (added > 0) {
+    saveWords();
+    renderWordList();
+    document.getElementById('bulk-input').value = '';
+    notify(`${added}語追加しました！`, 'success');
+  } else {
+    notify('追加できる単語がなかったよ', 'error');
+  }
+}
+
+function clearAllWords() {
+  if (confirm('全ての単語を削除する？')) {
+    words = [];
+    saveWords();
+    renderWordList();
+    notify('全削除しました', 'success');
+  }
+}
+
+// ─── Import/Export ───
+function exportData() {
+  const data = JSON.stringify(words, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'vocab-words.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  notify('保存しました！', 'success');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      if (file.name.endsWith('.json')) {
+        const data = JSON.parse(e.target.result);
+        if (Array.isArray(data) && data.every(w => w.en && w.ja)) {
+          words = data;
+          saveWords();
+          renderWordList();
+          notify(`${words.length}語読み込みました！`, 'success');
+        } else {
+          notify('ファイルの形式が違うよ', 'error');
+        }
+      } else if (file.name.endsWith('.csv')) {
+        const lines = e.target.result.split('\n').filter(l => l.trim());
+        const newWords = [];
+        lines.forEach(line => {
+          const parts = line.split(',').map(s => s.trim().replace(/^"|"$/g, ''));
+          if (parts.length >= 2 && parts[0] && parts[1]) {
+            newWords.push({ en: parts[0], ja: parts[1] });
+          }
+        });
+        if (newWords.length > 0) {
+          words = newWords;
+          saveWords();
+          renderWordList();
+          notify(`${words.length}語読み込みました！`, 'success');
+        }
+      }
+    } catch(err) {
+      notify('読み込みに失敗したよ', 'error');
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ─── Utils ───
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function notify(msg, type) {
+  const el = document.getElementById('notification');
+  el.textContent = msg;
+  el.className = `notification ${type} show`;
+  setTimeout(() => { el.classList.remove('show'); }, 2000);
+}
+
+// Keyboard shortcuts
+document.getElementById('input-en').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('input-ja').focus();
+});
+document.getElementById('input-ja').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') addWord();
+});
+
+// Init
+init();
+</script>
+
+</body>
+</html>
