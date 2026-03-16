@@ -677,6 +677,82 @@
       }
     }
 
+    /* Typing Quiz */
+    .typing-input-area {
+      margin-top: 16px;
+    }
+
+    .typing-input {
+      width: 100%;
+      padding: 14px 18px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      font-size: 1.1rem;
+      text-align: center;
+      letter-spacing: 1px;
+      transition: border-color 0.2s;
+      background: white;
+      color: var(--text);
+    }
+
+    .typing-input:focus {
+      outline: none;
+      border-color: var(--primary-light);
+    }
+
+    .typing-input.correct-input {
+      border-color: var(--success);
+      background: #ECFDF5;
+      color: var(--success);
+    }
+
+    .typing-input.wrong-input {
+      border-color: var(--danger);
+      background: #FEF2F2;
+      color: var(--danger);
+    }
+
+    .typing-input:disabled {
+      opacity: 0.8;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 14px;
+      margin-top: 12px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: white;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    .submit-btn:hover:not(:disabled) {
+      transform: scale(1.02);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .correct-answer-display {
+      text-align: center;
+      margin-top: 12px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--primary);
+      display: none;
+    }
+
+    .correct-answer-display.show {
+      display: block;
+    }
+
     /* BTS Feature */
     .bts-popup {
       position: fixed;
@@ -795,7 +871,8 @@
     </header>
 
     <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('quiz')">クイズ</button>
+      <button class="tab-btn active" onclick="switchTab('quiz')">4択</button>
+      <button class="tab-btn" onclick="switchTab('typing')">入力</button>
       <button class="tab-btn" onclick="switchTab('words')">単語リスト</button>
     </div>
 
@@ -856,6 +933,64 @@
           <div class="results-message" id="results-message">よくできました！</div>
           <div class="results-list" id="results-list"></div>
           <button class="start-btn" onclick="showSetup()">もう一回やる</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Typing Quiz Tab -->
+    <div id="tab-typing" class="tab-content">
+      <!-- Typing Setup -->
+      <div id="typing-setup" class="card">
+        <div class="setup-section range-section">
+          <label>出題範囲（番号で指定）</label>
+          <div class="range-row">
+            <input type="number" id="typing-range-from" min="1" value="1" placeholder="最初">
+            <span>〜</span>
+            <input type="number" id="typing-range-to" min="1" value="200" placeholder="最後">
+            <span>番</span>
+          </div>
+        </div>
+        <div class="setup-section">
+          <label>出題数</label>
+          <input type="number" id="typing-quiz-count" min="1" max="200" value="20">
+        </div>
+        <div class="setup-section">
+          <label>BTSコレクション</label>
+          <button class="data-btn" onclick="resetCollection()" style="width:100%">出会い記録をリセット</button>
+        </div>
+        <button class="start-btn" id="typing-start-btn" onclick="startTypingQuiz()">入力クイズをはじめる</button>
+      </div>
+
+      <!-- Typing Quiz Area -->
+      <div id="typing-area" style="display:none;">
+        <div class="card">
+          <div class="quiz-progress">
+            <span id="typing-q-num">1 / 10</span>
+            <span id="typing-q-score">正解: 0</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="typing-progress-fill" style="width:0%"></div>
+          </div>
+          <div class="quiz-hint">日本語を見て英単語を入力しよう</div>
+          <div class="quiz-word" id="typing-quiz-word">りんご</div>
+          <div class="typing-input-area">
+            <input type="text" class="typing-input" id="typing-answer" placeholder="英単語を入力..." autocomplete="off" autocapitalize="none" spellcheck="false">
+            <button class="submit-btn" id="typing-submit-btn" onclick="checkTypingAnswer()">回答する</button>
+            <div class="correct-answer-display" id="typing-correct-display"></div>
+          </div>
+          <div class="feedback" id="typing-feedback"></div>
+          <button class="next-btn" id="typing-next-btn" onclick="nextTypingQuestion()">次の問題へ</button>
+        </div>
+      </div>
+
+      <!-- Typing Results -->
+      <div id="typing-results" style="display:none;">
+        <div class="card results">
+          <div class="results-score" id="typing-results-score">80%</div>
+          <div class="results-detail" id="typing-results-detail">8 / 10 問正解</div>
+          <div class="results-message" id="typing-results-message">よくできました！</div>
+          <div class="results-list" id="typing-results-list"></div>
+          <button class="start-btn" onclick="showTypingSetup()">もう一回やる</button>
         </div>
       </div>
     </div>
@@ -1168,16 +1303,32 @@
         words.length
       );
       document.getElementById('start-btn').disabled = words.length < 4;
+
+      // Typing quiz fields
+      document.getElementById('typing-range-to').value = Math.min(
+        parseInt(document.getElementById('typing-range-to').value) || words.length,
+        words.length
+      );
+      document.getElementById('typing-quiz-count').value = Math.min(
+        parseInt(document.getElementById('typing-quiz-count').value) || 10,
+        words.length
+      );
+      document.getElementById('typing-start-btn').disabled = words.length < 1;
     }
 
     // ─── Tabs ───
     function switchTab(tab) {
       document.querySelectorAll('.tab-btn').forEach((b, i) => {
-        b.classList.toggle('active', (tab === 'quiz' && i === 0) || (tab === 'words' && i === 1));
+        b.classList.toggle('active',
+          (tab === 'quiz' && i === 0) ||
+          (tab === 'typing' && i === 1) ||
+          (tab === 'words' && i === 2)
+        );
       });
       document.getElementById('tab-quiz').classList.toggle('active', tab === 'quiz');
+      document.getElementById('tab-typing').classList.toggle('active', tab === 'typing');
       document.getElementById('tab-words').classList.toggle('active', tab === 'words');
-      if (tab === 'quiz') updateRangeMax();
+      if (tab === 'quiz' || tab === 'typing') updateRangeMax();
     }
 
     // ─── Quiz ───
@@ -1632,6 +1783,174 @@
       }
     }
 
+    // ─── Typing Quiz ───
+    let typingQuiz = [];
+    let typingIndex = 0;
+    let typingScore = 0;
+    let typingAnswered = false;
+    let typingResults = [];
+
+    function startTypingQuiz() {
+      if (words.length < 1) {
+        notify('1語以上登録してね！', 'error');
+        return;
+      }
+
+      const from = Math.max(1, parseInt(document.getElementById('typing-range-from').value) || 1);
+      const to = Math.min(words.length, parseInt(document.getElementById('typing-range-to').value) || words.length);
+
+      if (from > to || from > words.length) {
+        notify('範囲を確認してね', 'error');
+        return;
+      }
+
+      const rangeWords = words.slice(from - 1, to);
+      if (rangeWords.length < 1) {
+        notify('範囲内に単語が必要だよ', 'error');
+        return;
+      }
+
+      const count = Math.min(
+        parseInt(document.getElementById('typing-quiz-count').value) || 10,
+        rangeWords.length
+      );
+
+      typingQuiz = shuffle([...rangeWords]).slice(0, count);
+      typingIndex = 0;
+      typingScore = 0;
+      streak = 0;
+      typingAnswered = false;
+      typingResults = [];
+
+      document.getElementById('typing-setup').style.display = 'none';
+      document.getElementById('typing-results').style.display = 'none';
+      document.getElementById('typing-area').style.display = 'block';
+
+      showTypingQuestion();
+    }
+
+    function showTypingQuestion() {
+      typingAnswered = false;
+      const q = typingQuiz[typingIndex];
+      const total = typingQuiz.length;
+
+      document.getElementById('typing-q-num').textContent = `${typingIndex + 1} / ${total}`;
+      document.getElementById('typing-q-score').textContent = `正解: ${typingScore}`;
+      document.getElementById('typing-progress-fill').style.width = `${(typingIndex / total) * 100}%`;
+      document.getElementById('typing-quiz-word').textContent = q.ja;
+
+      const input = document.getElementById('typing-answer');
+      input.value = '';
+      input.className = 'typing-input';
+      input.disabled = false;
+      input.focus();
+
+      document.getElementById('typing-submit-btn').disabled = false;
+      document.getElementById('typing-feedback').className = 'feedback';
+      document.getElementById('typing-feedback').style.display = 'none';
+      document.getElementById('typing-correct-display').className = 'correct-answer-display';
+      document.getElementById('typing-next-btn').className = 'next-btn';
+    }
+
+    function checkTypingAnswer() {
+      if (typingAnswered) return;
+      typingAnswered = true;
+
+      const q = typingQuiz[typingIndex];
+      const input = document.getElementById('typing-answer');
+      const userAnswer = input.value.trim().toLowerCase();
+      const correctAnswer = q.en.toLowerCase();
+
+      const isCorrect = userAnswer === correctAnswer;
+      const feedback = document.getElementById('typing-feedback');
+
+      input.disabled = true;
+      document.getElementById('typing-submit-btn').disabled = true;
+
+      if (isCorrect) {
+        input.className = 'typing-input correct-input';
+        feedback.textContent = 'すごい！正解！';
+        feedback.className = 'feedback correct-fb show';
+        typingScore++;
+        checkStreak();
+        showBtsPopup();
+      } else {
+        streak = 0;
+        input.className = 'typing-input wrong-input';
+        feedback.textContent = 'おしい！';
+        feedback.className = 'feedback wrong-fb show';
+
+        const display = document.getElementById('typing-correct-display');
+        display.textContent = `正解: ${q.en}`;
+        display.className = 'correct-answer-display show';
+      }
+
+      typingResults.push({
+        word: q,
+        correct: isCorrect,
+        userAnswer: input.value.trim()
+      });
+
+      document.getElementById('typing-q-score').textContent = `正解: ${typingScore}`;
+
+      const nextBtn = document.getElementById('typing-next-btn');
+      if (typingIndex < typingQuiz.length - 1) {
+        nextBtn.className = 'next-btn show';
+        nextBtn.textContent = '次の問題へ';
+      } else {
+        nextBtn.className = 'next-btn show';
+        nextBtn.textContent = '結果を見る';
+      }
+    }
+
+    function nextTypingQuestion() {
+      typingIndex++;
+      if (typingIndex < typingQuiz.length) {
+        showTypingQuestion();
+      } else {
+        showTypingResults();
+      }
+    }
+
+    function showTypingResults() {
+      document.getElementById('typing-area').style.display = 'none';
+      document.getElementById('typing-results').style.display = 'block';
+
+      const total = typingQuiz.length;
+      const pct = Math.round((typingScore / total) * 100);
+
+      document.getElementById('typing-results-score').textContent = `${pct}%`;
+      document.getElementById('typing-results-detail').textContent = `${typingScore} / ${total} 問正解`;
+
+      let msg;
+      if (pct === 100) msg = 'パーフェクト！スペル完璧！';
+      else if (pct >= 80) msg = 'よくできました！';
+      else if (pct >= 60) msg = 'いい感じ！もう少し！';
+      else if (pct >= 40) msg = 'がんばろう！';
+      else msg = 'もう一度チャレンジ！';
+      document.getElementById('typing-results-message').textContent = msg;
+
+      const listEl = document.getElementById('typing-results-list');
+      listEl.innerHTML = '';
+      typingResults.forEach(r => {
+        const item = document.createElement('div');
+        item.className = 'results-list-item';
+        const yourAnswer = r.correct ? '' : ` <span style="color:var(--danger);font-size:0.85rem">(${escapeHtml(r.userAnswer) || '未入力'})</span>`;
+        item.innerHTML = `
+      <span class="word">${escapeHtml(r.word.en)} = ${escapeHtml(r.word.ja)}${yourAnswer}</span>
+      <span class="mark">${r.correct ? '⭕' : '❌'}</span>
+    `;
+        listEl.appendChild(item);
+      });
+    }
+
+    function showTypingSetup() {
+      document.getElementById('typing-area').style.display = 'none';
+      document.getElementById('typing-results').style.display = 'none';
+      document.getElementById('typing-setup').style.display = 'block';
+      updateRangeMax();
+    }
+
     // ─── Utils ───
     function shuffle(arr) {
       for (let i = arr.length - 1; i > 0; i--) {
@@ -1660,6 +1979,15 @@
     });
     document.getElementById('input-ja').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') addWord();
+    });
+    document.getElementById('typing-answer').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        if (!typingAnswered) {
+          checkTypingAnswer();
+        } else {
+          nextTypingQuestion();
+        }
+      }
     });
 
     // Init
